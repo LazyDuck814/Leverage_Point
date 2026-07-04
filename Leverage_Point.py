@@ -258,7 +258,7 @@ def get_signal_data(ticker: str = "TQQQ", period: str = PERIOD) -> SignalResult:
 
 
 # 실행
-def get_leverage_pint(tickers: List[str], period: str = PERIOD) -> List[SignalResult]:
+def get_leverage_point(tickers: List[str], period: str = PERIOD) -> List[SignalResult]:
     results = []
 
     for ticker in tickers:
@@ -286,13 +286,13 @@ def build_message(results: List[SignalResult]) -> str:
         sections.append("\n".join(lines))
 
     return (
-        f"[레버리지 핀트]\n"
+        f"[레버리지 포인트]\n"
         f"{base_date}\n\n"
         + "\n\n".join(sections)
     )
 
 
 if __name__ == "__main__":
-    results = get_leverage_pint(tickers=TICKERS, period=PERIOD)
+    results = get_leverage_point(tickers=TICKERS, period=PERIOD)
     message = build_message(results)
     print(message)
