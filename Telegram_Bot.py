@@ -20,10 +20,10 @@ def run_web():
 load_dotenv("token.env")
 TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 
-async def pint(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    print(f"✅ /pint 명령어 수신 완료! (요청자: {update.message.from_user.first_name})", flush=True)
+async def point(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    print(f"✅ /point 명령어 수신 완료! (요청자: {update.message.from_user.first_name})", flush=True)
 
-    results = get_leverage_pint(tickers=TICKERS, period=PERIOD)
+    results = get_leverage_point(tickers=TICKERS, period=PERIOD)
     message = build_message(results)
     await update.message.reply_text(message)
 
@@ -31,6 +31,6 @@ if __name__ == "__main__":
     threading.Thread(target=run_web, daemon=True).start() # 봇이 켜질 때 가짜 웹 서버도 백그라운드에서 같이 실행시킴
 
     app = ApplicationBuilder().token(TOKEN).build()
-    app.add_handler(CommandHandler("pint", pint))
+    app.add_handler(CommandHandler("", ))
     print("Bot Started")
     app.run_polling()
