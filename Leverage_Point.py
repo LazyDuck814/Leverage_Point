@@ -101,7 +101,7 @@ def get_price_data(ticker: str, period: str) -> pd.DataFrame:
 
 
 # 등락률, -2σ, -3σ, 120일선, RSI를 계산하는 함수
-def calculate_indicators(data: pd.DataFrame, ticker: str) -> tuple[pd.DataFrame, float, float]:
+def calculate_indicators(data: pd.DataFrame, ticker: str) -> tuple[pd.DataFrame, float, float, float, float]:
     close = data["Close"].squeeze()
     returns = close.pct_change()
 
@@ -124,7 +124,7 @@ def calculate_indicators(data: pd.DataFrame, ticker: str) -> tuple[pd.DataFrame,
     if len(df) < 2:
         raise ValueError(f"{ticker} 계산 가능한 데이터가 부족합니다.")
 
-    return df, minus_2sigma, minus_3sigma
+    return df, minus_2sigma, minus_3sigma, mean_return, std_return
 
 
 # 최신 데이터와 전일 데이터를 기준으로 매수/매도 조건을 계산하는 함수
@@ -225,15 +225,11 @@ def get_signal(ticker: str, latest_date: str, conditions: dict) -> tuple[str, st
 def get_signal_data(ticker: str = "TQQQ", period: str = PERIOD) -> SignalResult:
     data = get_price_data(ticker, period)
 
-    df, minus_2sigma, minus_3sigma = calculate_indicators(data, ticker)
-
+    df, minus_2sigma, minus_3sigma, mean_return, std_return = calculate_indicators(data, ticker)
+ 
     conditions, latest, latest_date = get_conditions(df, minus_2sigma)
 
-    signal_type, signal_message, action_text, in_sell_zone_hold = get_signal(
-        ticker=ticker,
-        latest_date=latest_date,
-        conditions=conditions
-    )
+    signal_type, signal_message, action_text, in_sell_zone_hold = get_signal(ticker, latest_date, conditions)
 
     return SignalResult(
         ticker=ticker.upper(),
