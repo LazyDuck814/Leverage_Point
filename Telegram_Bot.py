@@ -4,7 +4,7 @@ from flask import Flask
 from dotenv import load_dotenv
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
-from Leverage_Point import get_leverage_pint, build_message, TICKERS, PERIOD
+from Leverage_Point import get_leverage_point, build_message, TICKERS, PERIOD
 
 # --- Render용 가짜 웹 서버 세팅 ---
 web_app = Flask(__name__)
