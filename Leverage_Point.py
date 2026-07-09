@@ -1,16 +1,23 @@
 import os
 import json
+import requests
 from dataclasses import dataclass
 from typing import List
-
 import pandas as pd
 import yfinance as yf
 
-BASE_DIR      = os.path.dirname(os.path.abspath(__file__))
-STATE_FILE    = os.path.join(BASE_DIR, "signal_state.json")
 TICKERS       = ["SOXL", "TQQQ", "QLD"]
 CYCLE_TICKERS = {"TQQQ", "SOXL"}
 PERIOD        = "1y"
+
+# --- Gist API ---
+GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
+GIST_ID = os.environ.get("GIST_ID")
+GIST_HEADERS = {
+    "Authorization": f"token {GITHUB_TOKEN}",
+    "Accept": "application/vnd.github.v3+json"
+}
+# ----------------
 
 @dataclass
 class SignalResult:
@@ -36,20 +43,37 @@ class SignalResult:
     
 # signal_state.json 파일을 읽어 기존 매도 사이클 상태를 불러오는 함수
 def load_signal_state() -> dict:
-    if not os.path.exists(STATE_FILE):
+    if not GITHUB_TOKEN or not GIST_ID:
         return {}
-
+    
     try:
-        with open(STATE_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except json.JSONDecodeError:
+        url = f"https://api.github.com/gists/{GIST_ID}"
+        response = requests.get(url, headers=GIST_HEADERS)
+        response.raise_for_status()
+        content = response.json()["files"]["signal_state.json"]["content"]
+        return json.loads(content)
+    except Exception as e:
+        print(f"Gist 로드 실패: {e}")
         return {}
 
 
 # 현재 사이클 상태를 signal_state.json 파일에 저장하는 함수
 def save_signal_state(state: dict) -> None:
-    with open(STATE_FILE, "w", encoding="utf-8") as f:
-        json.dump(state, f, ensure_ascii=False, indent=2)
+    if not GITHUB_TOKEN or not GIST_ID:
+        return
+
+    url = f"https://api.github.com/gists/{GIST_ID}"
+    payload = {
+        "files": {
+            "signal_state.json": {
+                "content": json.dumps(state, ensure_ascii=False, indent=2)
+            }
+        }
+    }
+    try:
+        requests.patch(url, headers=GIST_HEADERS, json=payload)
+    except Exception as e:
+        print(f"Gist 저장 실패: {e}")
 
 
 # signal_state.json에서 특정 종목의 상태를 가져오는 함수
