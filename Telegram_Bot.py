@@ -28,7 +28,7 @@ async def point(update: Update, context: ContextTypes.DEFAULT_TYPE):
     status_msg = await update.message.reply_text("데이터 수집 및 분석 중...")
     
     if context.args:
-        target_tickers = [context.args[0].upper()]
+        ticker = context.args[0].upper()
         if ticker.isdigit() and len(ticker) == 6:
             ticker += ".KS"
         target_tickers = [ticker]
