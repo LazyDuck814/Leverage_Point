@@ -306,7 +306,6 @@ def build_message(results: List[SignalResult]) -> str:
         sections.append("\n".join(lines))
 
     return (
-        f"[레버리지 포인트]\n"
         f"{base_date}\n\n"
         + "\n\n".join(sections)
     )
