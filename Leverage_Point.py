@@ -52,6 +52,7 @@ def load_signal_state() -> dict:
         response.raise_for_status()
         content = response.json()["files"]["signal_state.json"]["content"]
         return json.loads(content)
+    
     except Exception as e:
         print(f"Gist 로드 실패: {e}")
         return {}
@@ -70,8 +71,10 @@ def save_signal_state(state: dict) -> None:
             }
         }
     }
+    
     try:
         requests.patch(url, headers=GIST_HEADERS, json=payload)
+
     except Exception as e:
         print(f"Gist 저장 실패: {e}")
 

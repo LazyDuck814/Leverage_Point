@@ -25,7 +25,7 @@ def run_web():
 
 
 async def point(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    status_msg = await update.message.reply_text("데이터 수집 및 분석 중입니다...")
+    status_msg = await update.message.reply_text("데이터 수집 및 분석 중...")
 
     try:
         results = await asyncio.to_thread(get_leverage_point, tickers=TICKERS, period=PERIOD)

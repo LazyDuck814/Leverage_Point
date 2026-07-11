@@ -30,6 +30,7 @@ def load_watchlist() -> list:
         if "watchlist.json" in files:
             return json.loads(files["watchlist.json"]["content"])
         return []
+    
     except Exception as e:
         print(f"Watchlist 로드 실패: {e}")
         return []
@@ -48,9 +49,10 @@ def save_watchlist(wl: list) -> None:
             }
         }
     }
-    
+
     try:
         requests.patch(url, headers=GIST_HEADERS, json=payload)
+
     except Exception as e:
         print(f"Watchlist 저장 실패: {e}")
 
@@ -62,6 +64,7 @@ def get_stock_name(ticker: str) -> str:
             url = f"https://m.stock.naver.com/api/stock/{ticker}/integration"
             res = requests.get(url, timeout=3)
             return res.json().get('stockName', ticker)
+        
         except Exception:
             return ticker
             
@@ -70,6 +73,7 @@ def get_stock_name(ticker: str) -> str:
         try:
             info = yf.Ticker(ticker).info
             return info.get('shortName', ticker)
+        
         except Exception:
             return ticker
 
