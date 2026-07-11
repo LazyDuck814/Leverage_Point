@@ -34,7 +34,7 @@ async def point(update: Update, context: ContextTypes.DEFAULT_TYPE):
         print(f"✅ [성공] /point 처리 완료 (요청자: {update.message.from_user.first_name})", flush=True)
 
     except Exception as e:
-        await status_msg.edit_text(f"❌ 처리 중 오류가 발생했습니다.\n(에러: {e})")
+        await status_msg.edit_text(f"❌ 오류가 발생했습니다.\n(에러: {e})")
         print(f"❌ [실패] /point 처리 실패 {e}", flush=True)
 
 
@@ -49,14 +49,14 @@ async def list_add(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if ticker not in wl:
             wl.append(ticker)
             await asyncio.to_thread(save_watchlist, wl)
-            await update.message.reply_text(f"✅ [{ticker}] 관심종목에 추가되었습니다.")
+            await update.message.reply_text(f"✅ [{ticker}] 리스트에 추가되었습니다.")
             print(f"✅ [성공] /list_add 처리 완료 (요청자: {update.message.from_user.first_name})", flush=True)
         else:
-            await update.message.reply_text(f"ℹ️ [{ticker}] 이미 관심종목에 있습니다.")
+            await update.message.reply_text(f"ℹ️ [{ticker}] 이미 리스트에 존재합니다.")
             print(f"ℹ️ [안내] /list_add 처리 완료 (요청자: {update.message.from_user.first_name})", flush=True)
             
     except Exception as e:
-        await update.message.reply_text(f"❌ 처리 중 오류가 발생했습니다.\n(에러: {e})")
+        await update.message.reply_text(f"❌ 오류가 발생했습니다.\n(에러: {e})")
         print(f"❌ [실패] /list_add 처리 실패 {e}", flush=True)
 
 
@@ -71,25 +71,25 @@ async def list_del(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if ticker in wl:
             wl.remove(ticker)
             await asyncio.to_thread(save_watchlist, wl)
-            await update.message.reply_text(f"✅ [{ticker}] 관심종목에서 삭제되었습니다.")
+            await update.message.reply_text(f"✅ [{ticker}] 리스트에서 삭제되었습니다.")
             print(f"✅ [성공] /list_del 처리 완료 (요청자: {update.message.from_user.first_name})", flush=True)
         else:
-            await update.message.reply_text(f"ℹ️ [{ticker}] 관심종목에 존재하지 않습니다.")
+            await update.message.reply_text(f"ℹ️ [{ticker}] 리스트에 존재하지 않습니다.")
             print(f"ℹ️ [안내] /list_del 처리 완료 (요청자: {update.message.from_user.first_name})", flush=True)
             
     except Exception as e:
-        await update.message.reply_text(f"❌ 처리 중 오류가 발생했습니다.\n(에러: {e})")
+        await update.message.reply_text(f"❌ 오류가 발생했습니다.\n(에러: {e})")
         print(f"❌ [실패] /list_del 처리 실패 {e}", flush=True)
 
 
 async def show_list(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    status_msg = await update.message.reply_text("관심종목 조회 중...")
+    status_msg = await update.message.reply_text("리스트 조회 중...")
     
     try:
         wl = await asyncio.to_thread(load_watchlist)
         
         if not wl:
-            await status_msg.edit_text("ℹ️ 관심종목이 비어있습니다. /list_add 명령어로 추가해주세요.")
+            await status_msg.edit_text("ℹ️ 리스트가 비어있습니다. /list_add 명령어로 추가해주세요.")
             print(f"ℹ️ [성공] /list 처리 완료 (요청자: {update.message.from_user.first_name})", flush=True)
             return
         
@@ -98,7 +98,7 @@ async def show_list(update: Update, context: ContextTypes.DEFAULT_TYPE):
         print(f"✅ [성공] /list 처리 완료 (요청자: {update.message.from_user.first_name})", flush=True)
         
     except Exception as e:
-        await status_msg.edit_text(f"❌ 처리 중 오류가 발생했습니다.\n(에러: {e})")
+        await status_msg.edit_text(f"❌ 오류가 발생했습니다.\n(에러: {e})")
         print(f"❌ [실패] /list 처리 실패 {e}", flush=True)
 
 
