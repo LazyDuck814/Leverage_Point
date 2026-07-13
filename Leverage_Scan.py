@@ -125,7 +125,7 @@ def build_scan_message(ticker: str, period: str = "1y") -> str:
     ]
 
     lines = []
-    lines.append(f"📊 *[{result.ticker}] 스캔 결과 ({period})*")
+    lines.append(f"[{result.ticker}] 스캔 결과")
     lines.append(f"• 데이터 기간 : {result.data_start} ~ {result.data_end} ({result.data_count}일)")
     lines.append(f"• 최신 종가 : ${result.close:,.2f}")
     lines.append(f"• RSI 지표 : {result.rsi14:.2f}")
@@ -145,9 +145,10 @@ def build_scan_message(ticker: str, period: str = "1y") -> str:
         for date, row in target_df.iterrows():
             lines.append(
                 f"{date.date()} | "
-                f"${row['close']:,.2f} | "
-                f"{row['return'] * 100:+.2f}% | "
-                f"RSI {row['rsi14']:.1f}"
+                f"종가 {row['close']:,.2f} | "
+                f"등락 {row['return'] * 100:+4.2f}% | "
+                f"RSI {row['rsi14']:4.1f} | "
+                f"120일선 {row['ma120']:,.2f}"
             )
         lines.append("") 
 
