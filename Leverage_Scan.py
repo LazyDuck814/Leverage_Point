@@ -146,7 +146,7 @@ def build_scan_message(ticker: str, period: str = "1y") -> str:
             lines.append(
                 f"{date.date()} | "
                 f"{row['close']:,.2f} | "
-                f"{row['return'] * 100:+7.2f}% | "
+                f"{row['return'] * 100:+.2f}% | "
                 f"RSI {row['rsi14']:.1f} | "
             )
         lines.append("") 

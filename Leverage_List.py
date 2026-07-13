@@ -80,8 +80,8 @@ def get_watchlist_text(wl: dict) -> str:
     if not wl:
         return "관심종목이 비어있습니다."
 
-    text = ""
+    text = "[관심종목]\n"
     for ticker, name in wl.items():
-        text += f"{name} : {ticker}\n"
+        text += f"• {name} : {ticker}\n"
         
     return text.strip()
