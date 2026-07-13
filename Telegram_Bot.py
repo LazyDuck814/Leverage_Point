@@ -136,7 +136,7 @@ async def show_list(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def scan(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    status_msg = await update.message.reply_text(f"🔍 {ticker} 과거 타점 스캔 중...")
+    status_msg = await update.message.reply_text(f"과거 타점 스캔 중...")
 
     if not context.args:
         await update.message.reply_text("종목명을 입력해주세요. (예: /list_del 005930)")
