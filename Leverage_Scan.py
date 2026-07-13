@@ -121,11 +121,11 @@ def build_scan_message(ticker: str, period: str = "1y") -> str:
         ("✅ 1차 매수 (RSI 35 이하 단독)", df[buy1]),
         ("✅ 2차 매수 (RSI 30 이하 단독)", df[buy2_rsi]),
         ("✅ 2차 매수 (120일선 아래 & -2σ 이하)", df[buy2_sigma]),
-        ("🔥 3차 매수 (120일선 아래 & -2σ 이하 & RSI 30 이하)", df[buy3]),
+        ("🔥 3차 매수 (120일선 & -2σ & RSI 30)", df[buy3]),
     ]
 
     lines = []
-    lines.append(f"[{result.ticker}] 스캔 결과")
+    lines.append(f"[{result.ticker}]")
     lines.append(f"• 기간 : {result.data_start} ~ {result.data_end} ({result.data_count}일)")
     lines.append(f"• 최신 종가 : ${result.close:,.2f}")
     lines.append(f"• RSI 지표 : {result.rsi14:.2f}")
@@ -136,7 +136,7 @@ def build_scan_message(ticker: str, period: str = "1y") -> str:
     lines.append("----------------------------------------------")
 
     for title, target_df in scans:
-        lines.append(f"*{title}*")
+        lines.append(f"{title}")
 
         if target_df.empty:
             lines.append("데이터 없음\n")
@@ -146,8 +146,8 @@ def build_scan_message(ticker: str, period: str = "1y") -> str:
             lines.append(
                 f"{date.date()} | "
                 f"{row['close']:,.2f} | "
-                f"{row['return'] * 100:+4.2f}% | "
-                f"RSI {row['rsi14']:4.1f} | "
+                f"{row['return'] * 100:+7.2f}% | "
+                f"RSI {row['rsi14']:.1f} | "
             )
         lines.append("") 
 
