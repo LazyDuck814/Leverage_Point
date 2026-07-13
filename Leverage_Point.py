@@ -205,17 +205,17 @@ def get_signal(ticker: str, latest_date: str, conditions: dict) -> tuple[str, st
     if conditions["below_ma120"] and conditions["below_minus_2sigma"] and conditions["rsi30_or_less"]:
         signal_type = "BOTH"
         signal_message = "120일선, -2σ, RSI 조건 충족"
-        action_text = "$1000 매수"
+        action_text = "2차 매수구간"
 
     elif conditions["below_ma120"] and conditions["below_minus_2sigma"]:
         signal_type = "SIGMA"
         signal_message = "120일선, -2σ 조건 충족"
-        action_text = "$500 매수"
+        action_text = "1차 매수구간"
 
     elif conditions["rsi30_or_less"]:
         signal_type = "RSI"
         signal_message = "RSI 조건 충족"
-        action_text = "$500 매수"
+        action_text = "1차 매수구간"
 
     elif ticker_upper in CYCLE_TICKERS:
         if conditions["crossed_70_up"] and not ticker_state["sold_70"]:
