@@ -131,24 +131,22 @@ def build_scan_message(ticker: str, period: str = "1y") -> str:
     cond_rsi30    = df["rsi30_or_less"]
     cond_bb_lower = df["below_bb_lower"]
 
-    buy3       = cond_sma & cond_sigma & cond_rsi30
-    buy2_sigma = (cond_sma & cond_sigma) & ~buy3
-    buy2_rsi   = cond_rsi30 & ~buy3
-    buy1_rsi   = cond_rsi35 & ~(buy3 | buy2_sigma | buy2_rsi)
-    buy1_bb    = cond_bb_lower
+    buy3        = cond_sma & cond_sigma & cond_rsi30
+    buy2_sigma  = (cond_sma & cond_sigma) & ~buy3
+    buy2_rsi    = cond_rsi30 & ~buy3
+    buy1_rsi_bb = (cond_rsi35 & cond_bb_lower) & ~(buy3 | buy2_sigma | buy2_rsi)
 
     scans = [
-        ("📊 [단독 확인용] 볼린저 밴드 하단 이탈 (전체)", df[buy1_bb]),
-        ("✅ 1차 매수 (RSI 35 이하 단독)", df[buy1_rsi]),
+        ("✅ 1차 매수 (RSI 35 이하 & BB 하단 이탈)", df[buy1_rsi_bb]),
         ("✅ 2차 매수 (RSI 30 이하 단독)", df[buy2_rsi]),
         ("✅ 2차 매수 (120일선 아래 & -2σ 이하)", df[buy2_sigma]),
-        ("🔥 3차 매수 (120일선 & -2σ & RSI 30)", df[buy3]),
+        ("🔥 3차 매수 (120일선 아래 & -2σ 이하 & RSI 30 이하)", df[buy3]),
     ]
 
     lines = []
     lines.append(f"[{result.ticker}]")
     lines.append(f"• 기간 : {result.data_start} ~ {result.data_end} ({result.data_count}일)")
-    lines.append(f"• 최신 종가 : ${result.close:,.2f}")
+    lines.append(f"• 최신 종가 : {result.close:,.2f}")
     lines.append(f"• RSI 지표 : {result.rsi14:.2f}")
     lines.append(f"• 1일 평균 등락 : {result.mean_return_pct:.2f}%")
     lines.append(f"• 1일 표준편차 : {result.std_return_pct:.2f}%")
@@ -169,7 +167,6 @@ def build_scan_message(ticker: str, period: str = "1y") -> str:
                 f"{row['close']:,.2f} | "
                 f"{row['return'] * 100:+.2f}% | "
                 f"RSI {row['rsi14']:.1f} | "
-                f"BB하단: {row['bb_lower']:,.2f}"
             )
         lines.append("") 
 

@@ -33,7 +33,7 @@ class SignalResult:
     rsi14: float             # 14일 기준 RSI 값
     minus_2sigma_pct: float  # 최근 1년 일간 등락률 기준 -2σ 값 % 단위
     minus_3sigma_pct: float  # 최근 1년 일간 등락률 기준 -3σ 값 % 단위
-    below_sma120: bool        # 현재가가 120일선 아래인지 여부
+    below_sma120: bool       # 현재가가 120일선 아래인지 여부
     below_minus_2sigma: bool # 등락률이 -2σ 이하인지 여부
     rsi35_or_less: bool      # RSI가 35 이하인지 여부 (추가됨)
     rsi30_or_less: bool      # RSI가 30 이하인지 여부
@@ -237,7 +237,7 @@ def get_signal_data(ticker: str, name: str, period: str = PERIOD) -> SignalResul
 # 조건과 매도 사이클 상태를 기준으로 최종 매매 신호를 결정하는 함수
 def get_signal(ticker: str, latest_date: str, conditions: dict) -> tuple[str, str, str, bool]:
     signal_type = "NONE"
-    signal_msg = "조건 미충족"
+    signal_msg  = "조건 미충족"
     action_text = "대기"
     in_sell_zone_hold = False
 
