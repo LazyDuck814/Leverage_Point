@@ -239,6 +239,7 @@ def get_signal_data(ticker: str, name: str, period: str = PERIOD) -> SignalResul
         minus_3sigma_pct   = float(minus_3sigma * 100),
         below_sma120       = conditions["below_sma120"],
         below_minus_2sigma = conditions["below_minus_2sigma"],
+        below_bb_lower     = conditions["below_bb_lower"],
         rsi35_or_less      = conditions["rsi35_or_less"],
         rsi30_or_less      = conditions["rsi30_or_less"],
         rsi70_or_more      = conditions["rsi70_or_more"],
