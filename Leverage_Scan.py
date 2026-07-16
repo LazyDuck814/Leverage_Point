@@ -1,7 +1,9 @@
 import sys
 from dataclasses import dataclass
 import pandas as pd
-from Leverage_Point import get_price_data, calculate_rsi, calculate_sma, calculate_sigma, BUFFERED_SIGMA
+from Leverage_Point import get_price_data, BUFFERED_SIGMA, PERIOD
+from Leverage_Point import calculate_rsi, calculate_sma, calculate_bollinger_bands , calculate_sigma
+
 
 @dataclass
 class ScanResult:
@@ -19,14 +21,30 @@ class ScanResult:
     scan: pd.DataFrame        # 분석 완료된 전체 데이터 프레임
 
 
-def get_scan_data(ticker: str = "TQQQ", period: str = "1y") -> ScanResult:
+def get_scan_data(ticker: str, period: str) -> ScanResult:
     years = int(period.replace("y", ""))
     fetch_period = f"{years + 1}y"
+
     data = get_price_data(ticker, fetch_period)
     close = data["Close"].squeeze()
+    returns = close.pct_change(fill_method=None)
+
+    sma5, sma20, sma60, sma120 = calculate_sma(close)
+    rsi14 = calculate_rsi(close)
+    std20, bb_upper, bb_lower = calculate_bollinger_bands(close)
+
+    df = pd.DataFrame({
+        "close"   : close,
+        "return"  : returns,
+        "sma5"    : sma5,
+        "sma20"   : sma20,
+        "sma60"   : sma60,
+        "sma120"  : sma120,
+        "rsi14"   : rsi14,
+        "std20"   : std20,
+        "bb_lower": bb_lower
+    })
     
-    df = calculate_sma(close)
-    df["rsi14"] = calculate_rsi(close, period=14)
     df = df.dropna()
     df = df.tail(252 * years)
 
@@ -39,8 +57,6 @@ def get_scan_data(ticker: str = "TQQQ", period: str = "1y") -> ScanResult:
     df["below_minus_2sigma"] = df["return"] <= minus_2sigma * BUFFERED_SIGMA
     df["rsi35_or_less"]      = df["rsi14"] <= 35
     df["rsi30_or_less"]      = df["rsi14"] <= 30
-    df["std20"]              = df["close"].rolling(window=20).std(ddof=0)
-    df["bb_lower"]           = df["sma20"] - (2 * df["std20"])
     df["below_bb_lower"]     = df["close"] <= df["bb_lower"]
 
     latest_date = df.index[-1].date().isoformat()
@@ -61,7 +77,7 @@ def get_scan_data(ticker: str = "TQQQ", period: str = "1y") -> ScanResult:
     )
 
 
-def print_scan(ticker: str = "TQQQ", period: str = "1y") -> None:
+def print_scan(ticker: str, period: str) -> None:
     result = get_scan_data(ticker, period)
     df = result.scan
 
@@ -71,10 +87,10 @@ def print_scan(ticker: str = "TQQQ", period: str = "1y") -> None:
     cond_rsi30    = df["rsi30_or_less"]
     cond_bb_lower = df["below_bb_lower"]
 
-    buy3        = cond_sma & cond_sigma & cond_rsi30
-    buy2_sigma  = (cond_sma & cond_sigma) & ~buy3
-    buy2_rsi    = cond_rsi30 & ~buy3
-    buy1_rsi_bb = (cond_rsi35 & cond_bb_lower) & ~(buy3 | buy2_sigma | buy2_rsi)
+    buy3         = cond_sma & cond_sigma & cond_rsi30
+    buy2_sigma   = (cond_sma & cond_sigma) & ~buy3
+    buy2_rsi     = cond_rsi30 & ~buy3
+    buy1_rsi_bb  = (cond_rsi35 & cond_bb_lower) & ~(buy3 | buy2_sigma | buy2_rsi)
     #buy_bb      = cond_bb_lower
 
     scans = [
@@ -117,12 +133,11 @@ def print_scan(ticker: str = "TQQQ", period: str = "1y") -> None:
 
 
 
-def build_scan_message(ticker: str, period: str = "1y") -> str:
+def build_scan_message(ticker: str, period: str) -> str:
     try:
         result = get_scan_data(ticker, period)
     except Exception as e:
         return f"⚠️ {ticker.upper()} 데이터 조회 실패: {e}"
-
     df = result.scan
 
     cond_sma      = df["below_sma120"]
@@ -175,7 +190,7 @@ def build_scan_message(ticker: str, period: str = "1y") -> str:
 
 if __name__ == "__main__":
     ticker = "TQQQ"
-    period = "1y"
+    period = PERIOD
 
     if len(sys.argv) >= 2:
         ticker = sys.argv[1].upper()

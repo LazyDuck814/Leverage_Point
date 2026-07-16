@@ -12,6 +12,7 @@ from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 from Leverage_Point import get_leverage_point, build_point_message, TICKERS, PERIOD
 from Leverage_List import load_watchlist, save_watchlist, get_watchlist_text, get_stock_name
 from Leverage_Scan import build_scan_message
+from Leverage_USD import get_usd_signal_data, build_usd_message
 
 # --- Render용 가짜 웹 서버 세팅 ---
 web_app = Flask(__name__)

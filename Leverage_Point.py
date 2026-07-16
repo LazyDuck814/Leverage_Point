@@ -6,9 +6,9 @@ from typing import List, Dict, Union
 import pandas as pd
 import yfinance as yf
 
+PERIOD         = "1y"
 TICKERS        = ["SOXL", "TQQQ", "QLD"]
 CYCLE_TICKERS  = {"TQQQ", "SOXL"}
-PERIOD         = "1y"
 BUFFERED_SIGMA = 0.95
 
 # --- Gist API ---
@@ -35,6 +35,7 @@ class SignalResult:
     minus_3sigma_pct: float  # 최근 1년 일간 등락률 기준 -3σ 값 % 단위
     below_sma120: bool       # 현재가가 120일선 아래인지 여부
     below_minus_2sigma: bool # 등락률이 -2σ 이하인지 여부
+    below_bb_lower: bool     # 볼린저 밴드 하단 이탈 여부
     rsi35_or_less: bool      # RSI가 35 이하인지 여부 (추가됨)
     rsi30_or_less: bool      # RSI가 30 이하인지 여부
     rsi70_or_more: bool      # RSI가 70 이상인지 여부
@@ -145,20 +146,24 @@ def calculate_sigma(returns: pd.Series) -> tuple[float, float, float, float]:
 
 
 # 이동평균선을 구하는 함수
-def calculate_sma(close: pd.Series) -> pd.DataFrame:
+def calculate_sma(close: pd.Series) -> tuple[pd.Series, pd.Series, pd.Series]:
     sma5   = close.rolling(window=5).mean()
     sma20  = close.rolling(window=20).mean()
+    sma60  = close.rolling(window=60).mean()
     sma120 = close.rolling(window=120).mean()
 
-    df = pd.DataFrame({
-        "close"  : close,
-        "return" : close.pct_change(fill_method=None),
-        "sma5"   : sma5,
-        "sma20"  : sma20,
-        "sma120" : sma120
-    })
+    return sma5, sma20, sma60, sma120
 
-    return df
+
+# 볼린저 밴드 계산하는 함수
+def calculate_bollinger_bands(close: pd.Series) -> tuple[pd.Series, pd.Series, pd.Series]:
+    sma20 = close.rolling(window=20).mean()
+    std20 = close.rolling(window=20).std(ddof=0)
+    
+    bb_upper = sma20 + (2 * std20)
+    bb_lower = sma20 - (2 * std20)
+    
+    return std20, bb_upper, bb_lower
 
 
 # 최신 데이터와 전일 데이터를 기준으로 매수/매도 조건을 계산하는 함수
@@ -172,6 +177,7 @@ def get_conditions(df: pd.DataFrame, minus_2sigma: float) -> tuple[dict, pd.Seri
     conditions = {
         "below_sma120"       : bool(latest["close"] < latest["sma120"]),
         "below_minus_2sigma" : bool(latest["return"] <= minus_2sigma * BUFFERED_SIGMA),
+        "below_bb_lower"     : bool(latest["close"] <= latest["bb_lower"]),
         "rsi35_or_less"      : bool(latest["rsi14"] <= 35),
         "rsi30_or_less"      : bool(latest["rsi14"] <= 30),
         "rsi70_or_more"      : bool(latest["rsi14"] >= 70),
@@ -190,11 +196,25 @@ def get_conditions(df: pd.DataFrame, minus_2sigma: float) -> tuple[dict, pd.Seri
 def get_signal_data(ticker: str, name: str, period: str = PERIOD) -> SignalResult:
     years = int(period.replace("y", ""))
     fetch_period = f"{years + 1}y"
+
     data = get_price_data(ticker, fetch_period)
     close = data["Close"].squeeze()
+    returns = close.pct_change(fill_method=None)
 
-    df = calculate_sma(close)
-    df["rsi14"] = calculate_rsi(close, period=14)
+    sma5, sma20, sma60, sma120 = calculate_sma(close)
+    rsi14 = calculate_rsi(close)
+    std20, bb_upper, bb_lower = calculate_bollinger_bands(close)
+
+    df = pd.DataFrame({
+        "close"   : close,
+        "return"  : returns,
+        "sma5"    : sma5,
+        "sma20"   : sma20,
+        "sma120"  : sma120,
+        "rsi14"   : rsi14,
+        "std20"   : std20,
+        "bb_lower": bb_lower
+    })
     df = df.dropna()
     df = df.tail(252 * years)
 
@@ -202,9 +222,7 @@ def get_signal_data(ticker: str, name: str, period: str = PERIOD) -> SignalResul
         raise ValueError(f"{ticker} 계산 가능한 데이터가 부족합니다.")
 
     minus_2sigma, minus_3sigma, mean_return, std_return = calculate_sigma(df["return"])
-
     conditions, latest, latest_date = get_conditions(df, minus_2sigma)
-
     signal_type, signal_msg, action_text, in_sell_zone_hold = get_signal(ticker, latest_date, conditions)
 
     return SignalResult(
@@ -247,10 +265,10 @@ def get_signal(ticker: str, latest_date: str, conditions: dict) -> tuple[str, st
         state = load_signal_state()
         ticker_state = get_ticker_state(state, ticker_upper)
 
-        # 1차 매수구간(RSI 35)에 진입하면 사이클 초기화, True를 False로 수정 조건
+        # 1차 매수구간에 진입하면 사이클 초기화, True를 False로 수정 조건
         buy_signal = (
             (conditions["below_sma120"] and conditions["below_minus_2sigma"])
-            or conditions["rsi35_or_less"]
+            or (conditions["rsi35_or_less"] and conditions["below_bb_lower"]) or conditions["rsi30_or_less"]
         )
 
         if buy_signal and ticker_state["last_buy_cycle_date"] != latest_date:
@@ -276,12 +294,12 @@ def get_signal(ticker: str, latest_date: str, conditions: dict) -> tuple[str, st
         signal_msg  = "RSI 30 이하 조건 충족"
         action_text = "2차 매수구간"
         
-    elif conditions["rsi35_or_less"]:
+    elif conditions["rsi35_or_less"] and conditions["below_bb_lower"]:
         signal_type = "BUY_1_RSI"
-        signal_msg  = "RSI 35 이하 조건 충족"
+        signal_msg  = "RSI 35 이하, 볼린저 밴드 하단 조건 충족"
         action_text = "1차 매수구간"
 
-    # 매도 로직
+    # 매도 로직 (매수 조건이 먼저임)
     elif ticker_upper in CYCLE_TICKERS:
         if conditions["dead_cross"]:
             signal_type = "SELL_DEADCROSS"
