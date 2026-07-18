@@ -52,12 +52,10 @@ class SignalConditions:
     rsi35_or_less: bool             # RSI가 35 이하인지
     rsi30_or_less: bool             # RSI가 30 이하인지
     rsi70_or_more: bool             # RSI가 70 이상인지
-    rsi75_or_more: bool             # RSI가 75 이상인지
-    rsi80_or_more: bool             # RSI가 80 이상인지
-    crossed_70_up: bool             # RSI가 70을 상향 돌파했는지
-    crossed_75_up: bool             # RSI가 75를 상향 돌파했는지
-    crossed_80_up: bool             # RSI가 80을 상향 돌파했는지
-    dead_cross: bool                # 5일선이 20일선을 하향 돌파했는지
+    crossed_70_down: bool           # RSI가 70을 하향 이탈했는지
+    crossed_75_down: bool           # RSI가 75를 하향 이탈했는지
+    crossed_80_down: bool           # RSI가 80을 하향 이탈했는지
+    dead_cross: bool                # 5일선이 20일선을 하향 이탈했는지
 
 
 @dataclass
@@ -258,27 +256,25 @@ def get_conditions(indicators: IndicatorResult, sigma: SigmaResult) -> SignalCon
         rsi35_or_less      = indicators.rsi14 <= 35,
         rsi30_or_less      = indicators.rsi14 <= 30,
         rsi70_or_more      = indicators.rsi14 >= 70,
-        rsi75_or_more      = indicators.rsi14 >= 75,
-        rsi80_or_more      = indicators.rsi14 >= 80,
-        crossed_70_up      = indicators.prev_rsi14 < 70 <= indicators.rsi14,
-        crossed_75_up      = indicators.prev_rsi14 < 75 <= indicators.rsi14,
-        crossed_80_up      = indicators.prev_rsi14 < 80 <= indicators.rsi14,
+        crossed_70_down    = indicators.prev_rsi14 >= 70 and indicators.rsi14 < 70,
+        crossed_75_down    = indicators.prev_rsi14 >= 75 and indicators.rsi14 < 75,
+        crossed_80_down    = indicators.prev_rsi14 >= 80 and indicators.rsi14 < 80,
         dead_cross         = indicators.prev_sma5 >= indicators.prev_sma20 and indicators.sma5 < indicators.sma20,
     )
 
 
 def get_buy_signal(conditions: SignalConditions) -> TradeSignal:
     if conditions.below_sma120 and conditions.below_minus_2sigma and conditions.rsi30_or_less:
-        return TradeSignal("BUY_4", "120일선, -2σ, RSI 30 이하 조건 모두 충족", "4차 매수구간")
+        return TradeSignal("BUY_4", "120일선, -2σ, RSI 30 조건 모두 충족", "4차 매수구간")
 
-    elif conditions.rsi30_or_less:
-        return TradeSignal("BUY_3", "RSI 30 이하 조건 충족", "3차 매수구간")
-
-    elif conditions.below_sma120 and conditions.below_minus_2sigma:
-        return TradeSignal("BUY_2", "120일선, -2σ 조건 충족", "2차 매수구간")
+    elif conditions.rsi30_or_less and conditions.below_bb_lower:
+        return TradeSignal("BUY_3", "RSI 30, 볼린저밴드 조건 충족", "3차 매수구간")
 
     elif conditions.rsi35_or_less and conditions.below_bb_lower:
-        return TradeSignal("BUY_1", "RSI 35 이하, 볼린저밴드 하단 조건 충족", "1차 매수구간")
+        return TradeSignal("BUY_2", "RSI 35, 볼린저밴드 조건 충족", "2차 매수구간")
+
+    elif conditions.below_sma120 and conditions.below_minus_2sigma:
+        return TradeSignal("BUY_1", "120일선, -2σ 조건 충족", "1차 매수구간")
 
     else:
         return TradeSignal("NONE", "조건 미충족", "대기")
@@ -286,16 +282,16 @@ def get_buy_signal(conditions: SignalConditions) -> TradeSignal:
 
 def get_sell_signal(conditions: SignalConditions, ticker_state: dict) -> TradeSignal:
     if conditions.dead_cross:
-        return TradeSignal("SELL_DEADCROSS", "5일선-20일선 데드크로스 발생", "조정구간: 보유수량 10% 익절")
+        return TradeSignal("SELL_DEADCROSS", "5일선-20일선 데드크로스 발생", "조정구간: 보유수량 20% 익절")
 
-    elif conditions.crossed_70_up and not ticker_state["sold_70"]:
-        return TradeSignal("SELL70", "RSI 70 상향 돌파", "1차 매도구간: 보유수량 30% 익절")
+    elif conditions.crossed_70_down and not ticker_state["sold_70"]:
+        return TradeSignal("SELL70", "RSI 70 하향 이탈", "1차 매도구간: 보유수량 30% 익절")
 
-    elif conditions.crossed_75_up and not ticker_state["sold_75"]:
-        return TradeSignal("SELL75", "RSI 75 상향 돌파", "2차 매도구간: 보유수량 25% 익절")
+    elif conditions.crossed_75_down and not ticker_state["sold_75"]:
+        return TradeSignal("SELL75", "RSI 75 하향 이탈", "2차 매도구간: 보유수량 25% 익절")
 
-    elif conditions.crossed_80_up and not ticker_state["sold_80"]:
-        return TradeSignal("SELL80", "RSI 80 상향 돌파", "3차 매도구간: 보유수량 20% 익절")
+    elif conditions.crossed_80_down and not ticker_state["sold_80"]:
+        return TradeSignal("SELL80", "RSI 80 하향 이탈", "3차 매도구간: 보유수량 20% 익절")
 
     elif conditions.rsi70_or_more:
         return TradeSignal("NONE", "기존 매도 구간 유지 중", "추가 행동 없음", True)
@@ -318,9 +314,8 @@ def get_signal_data(ticker: str, name: str, period: str = PERIOD, state: dict | 
         ticker_state = get_signal_state(loaded_state, ticker_upper)
 
         buy_cycle_started = (
-            (conditions.below_sma120 and conditions.below_minus_2sigma)
+            (conditions.below_sma120 and conditions.below_minus_2sigma) 
             or (conditions.rsi35_or_less and conditions.below_bb_lower)
-            or conditions.rsi30_or_less
         )
 
         if buy_cycle_started and ticker_state["last_buy_cycle_date"] != indicators.latest_date:

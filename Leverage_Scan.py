@@ -85,14 +85,14 @@ def get_buy_scan_groups(df: pd.DataFrame) -> list[tuple[str, pd.DataFrame]]:
     cond_bb_lower = df["below_bb_lower"]
 
     buy4 = cond_sma & cond_sigma & cond_rsi30
-    buy3 = cond_rsi30 & ~buy4
-    buy2 = (cond_sma & cond_sigma) & ~buy4
-    buy1 = (cond_rsi35 & cond_bb_lower) & ~(buy4 | buy3 | buy2)
+    buy3 = (cond_rsi30 & cond_bb_lower) & ~buy4
+    buy2 = (cond_rsi35 & cond_bb_lower) & ~(buy4 | buy3)
+    buy1 = (cond_sma & cond_sigma) & ~(buy4 | buy3 | buy2)
 
     return [
-        ("1차 매수 (RSI 35 이하 & BB 하단 이하)",            df[buy1]),
-        ("2차 매수 (120일선 아래 & -2σ 이하)",               df[buy2]),
-        ("3차 매수 (RSI 30 이하 단독)",                      df[buy3]),
+        ("1차 매수 (120일선 아래 & -2σ 이하)",               df[buy1]),
+        ("2차 매수 (RSI 35 이하 & BB 하단 이하)",            df[buy2]),
+        ("3차 매수 (RSI 30 이하 & BB 하단 이하)",            df[buy3]),
         ("4차 매수 (120일선 아래 & -2σ 이하 & RSI 30 이하)", df[buy4]),
     ]
 
@@ -127,7 +127,9 @@ def build_scan_message(ticker: str, period: str = PERIOD) -> str:
                 f"{date.date()} | "
                 f"{row['close']:>6,.2f} | "
                 f"{row['daily_return'] * 100:+6.2f}% | "
-                f"RSI {row['rsi14']:5.1f}"
+                f"RSI {row['rsi14']:5.1f} | "
+                #f"120일선: {row['sma120']:>7,.2f} | "
+                #f"BB하단: {row['bb_lower']:>7,.2f}"
             )
         lines.append("")
 
