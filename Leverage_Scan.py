@@ -1,6 +1,7 @@
 import sys
-from dataclasses import dataclass
 import pandas as pd
+
+from dataclasses import dataclass
 from Leverage_Point import BUFFERED_SIGMA
 from Leverage_Point import calculate_bollinger_bands, calculate_rsi, calculate_sigma, calculate_sma, get_price_data
 
@@ -23,7 +24,7 @@ class ScanResult:
     scan: pd.DataFrame       # 지표와 조건이 포함된 스캔 결과
 
 
-def get_scan_data(ticker: str, period: str = PERIOD) -> ScanResult:
+def get_scan_data(ticker: str = TICKER, period: str = PERIOD) -> ScanResult:
     years = int(period.replace("y", ""))
     data = get_price_data(ticker, f"{years + 1}y")
     close = data["Close"].squeeze()
@@ -90,14 +91,14 @@ def get_buy_scan_groups(df: pd.DataFrame) -> list[tuple[str, pd.DataFrame]]:
     buy1 = (cond_sma & cond_sigma) & ~(buy4 | buy3 | buy2)
 
     return [
-        ("1차 매수 (120일선 아래 & -2σ 이하)",               df[buy1]),
-        ("2차 매수 (RSI 35 이하 & BB 하단 이하)",            df[buy2]),
-        ("3차 매수 (RSI 30 이하 & BB 하단 이하)",            df[buy3]),
-        ("4차 매수 (120일선 아래 & -2σ 이하 & RSI 30 이하)", df[buy4]),
+        ("• 1차 매수 (120일선 아래 & -2σ 이하)",               df[buy1]),
+        ("• 2차 매수 (RSI 35 이하 & BB 하단 이하)",            df[buy2]),
+        ("• 3차 매수 (RSI 30 이하 & BB 하단 이하)",            df[buy3]),
+        ("• 4차 매수 (120일선 아래 & -2σ 이하 & RSI 30 이하)", df[buy4]),
     ]
 
 
-def build_scan_message(ticker: str, period: str = PERIOD) -> str:
+def build_scan_message(ticker: str = TICKER, period: str = PERIOD) -> str:
     try:
         result = get_scan_data(ticker, period)
     except Exception as e:
@@ -146,4 +147,4 @@ if __name__ == "__main__":
     if len(sys.argv) >= 3:
         period = f"{sys.argv[2]}y"
 
-    print(build_scan_message(ticker, period))
+    print(build_scan_message(ticker=ticker, period=period))

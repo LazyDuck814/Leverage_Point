@@ -1,11 +1,12 @@
 import json
 import os
-from dataclasses import dataclass
-from typing import Dict, List, Union
-
+import sys
 import pandas as pd
 import requests
 import yfinance as yf
+
+from dataclasses import dataclass
+from typing import Dict, List, Union
 
 PERIOD = "1y"
 TICKERS = ["SOXL", "TQQQ", "QLD"]
@@ -365,21 +366,27 @@ def build_point_message(results: List[SignalResult]) -> str:
             f"• 현재가(등락률): {indicators.close:,.2f} ({indicators.daily_return * 100:+.2f}%)",
             f"• 120일선(-2σ): {indicators.sma120:,.2f} ({sigma.minus_2sigma_pct:+.2f}%)",
             f"• RSI: {indicators.rsi14:.1f}",
+            f"• BB하단: {indicators.bb_lower:,.2f}",
             "----------------------------------------------------",
             f">> {signal.signal_msg}",
             f">> {signal.action_text}",
         ]
         sections.append("\n".join(lines))
 
-    return f"{base_date}\n\n" + "\n\n".join(sections)
+    return f"{base_date}\n\n" + "\n\n".join(sections) + "\n"
 
 
-def get_leverage_point(tickers: Union[List[str], Dict[str, str]], period: str = PERIOD) -> List[SignalResult]:
+def get_leverage_point(ticker: Union[str, List[str], Dict[str, str]], period: str = PERIOD) -> List[SignalResult]:
     state = load_signal_state()
     before_state = json.dumps(state, sort_keys=True)
     results = []
 
-    target_items = tickers.items() if isinstance(tickers, dict) else [(ticker, ticker) for ticker in tickers]
+    if isinstance(ticker, str):
+        target_items = [(ticker, ticker)]
+    elif isinstance(ticker, dict):
+        target_items = ticker.items()
+    else:
+        target_items = [(ticker, ticker) for ticker in ticker]
 
     for ticker, name in target_items:
         results.append(get_signal_data(ticker, name, period=period, state=state))
@@ -393,5 +400,14 @@ def get_leverage_point(tickers: Union[List[str], Dict[str, str]], period: str = 
 
 
 if __name__ == "__main__":
-    loc_results = get_leverage_point(TICKERS, period=PERIOD)
-    print(build_point_message(loc_results))
+    ticker = TICKERS
+    period = PERIOD
+
+    if len(sys.argv) >= 2:
+        ticker = sys.argv[1].upper()
+
+    if len(sys.argv) >= 3:
+        period = f"{sys.argv[2]}y"
+
+    results = get_leverage_point(ticker=ticker, period=period)
+    print(build_point_message(results))

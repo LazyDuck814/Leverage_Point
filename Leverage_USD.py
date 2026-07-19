@@ -1,4 +1,6 @@
+import sys
 import pandas as pd
+
 from dataclasses import dataclass
 from Leverage_Point import calculate_bollinger_bands, calculate_rsi, calculate_sma, get_price_data
 
@@ -36,7 +38,7 @@ class UsdSignalResult:
     signal: UsdSignal              # 최종 환율 신호
 
 
-def get_usd_indicator_result(ticker: str = "KRW=X", period: str = "1y") -> UsdIndicatorResult:
+def get_usd_indicator_result(ticker: str = PERIOD, period: str = PERIOD) -> UsdIndicatorResult:
     years = int(period.replace("y", ""))
     data = get_price_data(ticker, f"{years + 1}y")
     close = data["Close"].squeeze()
@@ -91,7 +93,7 @@ def get_usd_signal(conditions: UsdConditions) -> UsdSignal:
         return UsdSignal("조건 미충족", "대기")
 
 
-def get_usd_signal_data(ticker: str = "KRW=X", period: str = "1y") -> UsdSignalResult:
+def get_usd_signal_data(ticker: str = TICKER, period: str = PERIOD) -> UsdSignalResult:
     indicators = get_usd_indicator_result(ticker, period)
     conditions = get_usd_conditions(indicators)
     signal = get_usd_signal(conditions)
@@ -103,7 +105,7 @@ def get_usd_signal_data(ticker: str = "KRW=X", period: str = "1y") -> UsdSignalR
     )
 
 
-def build_usd_message(ticker: str = "KRW=X", period: str = "1y") -> str:
+def build_usd_message(ticker: str = TICKER, period: str = PERIOD) -> str:
     try:
         result = get_usd_signal_data(ticker, period)
     except Exception as e:
@@ -117,14 +119,23 @@ def build_usd_message(ticker: str = "KRW=X", period: str = "1y") -> str:
         "[USD/KRW 환율]",
         f"• 현재가(등락률): {indicators.close:,.2f}원 ({indicators.daily_return * 100:+.2f}%)",
         f"• 200일선: {indicators.sma200:,.2f}원",
-        f"• 볼린저하단: {indicators.bb_lower:,.2f}원",
         f"• RSI: {indicators.rsi14:.1f}",
+        f"• BB하단: {indicators.bb_lower:,.2f}원",
         "----------------------------------------------------",
         f">> {signal.signal_msg}",
         f">> {signal.action_text}",
     ]
-    return "\n".join(lines)
+    return "\n".join(lines) + "\n"
 
 
 if __name__ == "__main__":
-    print(build_usd_message(TICKER, PERIOD))
+    ticker = TICKER
+    period = PERIOD
+
+    if len(sys.argv) >= 2:
+        ticker = sys.argv[1].upper()
+
+    if len(sys.argv) >= 3:
+        period = f"{sys.argv[2]}y"
+
+    print(build_usd_message(ticker=ticker, period=period))

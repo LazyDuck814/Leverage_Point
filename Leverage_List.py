@@ -2,6 +2,7 @@ import os
 import json
 import requests
 import yfinance as yf
+
 from dotenv import load_dotenv
 
 load_dotenv("token.env")
@@ -84,4 +85,9 @@ def get_watchlist_text(wl: dict) -> str:
     for ticker, name in wl.items():
         text += f"• {name} : {ticker}\n"
         
-    return text.strip()
+    return text.strip() + "\n"
+
+
+if __name__ == "__main__":
+    wl = load_watchlist()
+    print(get_watchlist_text(wl))
