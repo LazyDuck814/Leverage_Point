@@ -4,6 +4,8 @@ import pandas as pd
 
 from dataclasses import dataclass
 from typing import Dict, List, Union
+from datetime import datetime, time
+from zoneinfo import ZoneInfo
 from Leverage_Point import BUFFERED_SIGMA, PERIOD, TICKERS, get_price_data
 from Leverage_Point import calculate_bollinger_bands, calculate_rsi, calculate_sigma, calculate_sma
 
@@ -143,6 +145,13 @@ def get_loc_data(ticker: str, name: str, period: str = PERIOD) -> LocResult:
     years  = int(period.replace("y", ""))
     data   = get_price_data(ticker, f"{years + 1}y")
     close  = data["Close"].squeeze()
+
+    market_time = datetime.now(ZoneInfo("America/New_York"))
+    latest_date = close.index[-1].date()
+
+    if latest_date == market_time.date() and market_time.time() < time(16, 30):
+        close = close.iloc[:-1]
+
     prices = get_loc_prices(close, years)
     orders = get_loc_orders(prices)
 
