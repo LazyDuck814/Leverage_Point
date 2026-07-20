@@ -373,7 +373,7 @@ def build_point_message(results: List[SignalResult]) -> str:
         ]
         sections.append("\n".join(lines))
 
-    return f"{base_date}\n\n" + "\n\n".join(sections) + "\n"
+    return f"기준일 : {base_date}\n\n" + "\n\n".join(sections) + "\n"
 
 
 def get_leverage_point(ticker: Union[str, List[str], Dict[str, str]], period: str = PERIOD) -> List[SignalResult]:

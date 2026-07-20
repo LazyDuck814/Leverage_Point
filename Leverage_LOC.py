@@ -199,8 +199,8 @@ def build_loc_message(results: List[LocResult]) -> str:
     for result in results:
         lines = [
             f"[{result.name}]",
-            f"• 현재가 : {result.close:,.2f}",
-            f"• RSI : {result.rsi14:.1f}",
+            f"• 기준 종가 : {result.close:,.2f}",
+            f"• 기준 RSI : {result.rsi14:.1f}",
             "----------------------------------------------------",
         ]
 
@@ -209,7 +209,7 @@ def build_loc_message(results: List[LocResult]) -> str:
 
         sections.append("\n".join(lines))
 
-    return f"{base_date}\n\n" + "\n\n".join(sections) + "\n"
+    return f"기준일 : {base_date}\n\n" + "\n\n".join(sections) + "\n"
 
 
 if __name__ == "__main__":
