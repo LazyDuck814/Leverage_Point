@@ -115,7 +115,7 @@ def build_usd_message(ticker: str = TICKER, period: str = PERIOD) -> str:
     signal = result.signal
 
     lines = [
-        f"{indicators.latest_date}\n",
+        f"기준일 : {indicators.latest_date}\n",
         "[USD/KRW 환율]",
         f"• 현재가(등락률): {indicators.close:,.2f}원 ({indicators.daily_return * 100:+.2f}%)",
         f"• 200일선: {indicators.sma200:,.2f}원",
